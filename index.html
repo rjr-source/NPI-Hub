@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NPI Hub — Lightship L1</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #1a202c;
+  --bg1:      #0f172a;
+  --bg2:      #2d3748;
+  --bg3:      #1e293b;
+  --border:   #2d3748;
+  --border2:  #4a5568;
+  --tx1:      #f7fafc;
+  --tx2:      #e2e8f0;
+  --tx3:      #a0aec0;
+  --tx4:      #718096;
+  --blue:     #63b3ed;
+  --blue-bg:  #1a365d;
+  --blue-dk:  #2b6cb0;
+  --green:    #68d391;
+  --green-bg: #1c4532;
+  --green-dk: #276749;
+  --amber:    #f6ad55;
+  --amber-bg: #2d2007;
+  --amber-dk: #b7791f;
+  --purple:   #b794f4;
+  --purple-bg:#322659;
+  --purple-dk:#6b46c1;
+}
+
+html, body { height: 100%; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg1);
+  color: var(--tx2);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Background grid texture ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(99,179,237,.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99,179,237,.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Header ── */
+.header {
+  position: relative;
+  z-index: 10;
+  background: linear-gradient(160deg, #2d3748 0%, #1a202c 60%, #0f172a 100%);
+  border-bottom: 1px solid var(--border2);
+  padding: 36px 48px 28px;
+}
+.header::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--blue), transparent);
+  opacity: .4;
+}
+.header-inner { max-width: 1100px; margin: 0 auto; }
+.eyebrow {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--blue);
+  letter-spacing: .28em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.header h1 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 32px;
+  color: var(--tx1);
+  font-weight: 400;
+  letter-spacing: -.02em;
+  line-height: 1.15;
+  margin-bottom: 10px;
+}
+.header h1 span { color: var(--blue); }
+.header p {
+  font-size: 13px;
+  color: var(--tx3);
+  max-width: 620px;
+  line-height: 1.75;
+}
+
+/* ── Status bar ── */
+.status-bar {
+  position: relative;
+  z-index: 10;
+  background: var(--bg1);
+  border-bottom: 1px solid var(--border);
+  padding: 0 48px;
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  overflow-x: auto;
+}
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 0;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  padding-right: 32px;
+}
+.status-item:last-child { border-right: none; }
+.status-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.dot-green  { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.dot-blue   { background: var(--blue);  box-shadow: 0 0 6px var(--blue); }
+.dot-amber  { background: var(--amber); box-shadow: 0 0 6px var(--amber); }
+.dot-purple { background: var(--purple);box-shadow: 0 0 6px var(--purple); }
+.status-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--tx4);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.status-val {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--tx2);
+}
+
+/* ── Content ── */
+.content {
+  position: relative;
+  z-index: 1;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 40px 48px 60px;
+}
+
+/* ── Section label ── */
+.section-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--tx4);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ── PRIMARY CARD (main NPI file) ── */
+.primary-card {
+  background: linear-gradient(135deg, #1e293b 0%, #162032 100%);
+  border: 1px solid var(--border2);
+  border-radius: 14px;
+  padding: 32px 36px;
+  margin-bottom: 40px;
+  cursor: pointer;
+  transition: all .22s;
+  position: relative;
+  overflow: hidden;
+}
+.primary-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  border: 1px solid transparent;
+  background: linear-gradient(135deg, rgba(99,179,237,.2), transparent 60%) border-box;
+  -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: destination-out;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity .22s;
+}
+.primary-card:hover { transform: translateY(-2px); box-shadow: 0 16px 48px rgba(0,0,0,.5); }
+.primary-card:hover::before { opacity: 1; }
+.primary-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+.primary-icon {
+  width: 52px; height: 52px;
+  background: linear-gradient(135deg, var(--blue-dk), #1a3a5c);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  flex-shrink: 0;
+  border: 1px solid rgba(99,179,237,.3);
+}
+.primary-card-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 22px;
+  color: var(--tx1);
+  font-weight: 400;
+  letter-spacing: -.01em;
+  line-height: 1.2;
+  margin-bottom: 5px;
+}
+.primary-card-sub {
+  font-size: 12px;
+  color: var(--tx3);
+  line-height: 1.6;
+  max-width: 560px;
+}
+.section-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 24px;
+}
+.pill {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-weight: 500;
+  letter-spacing: .04em;
+  border: 1px solid var(--border2);
+  color: var(--tx3);
+  background: var(--bg3);
+  transition: all .15s;
+}
+.pill:hover { border-color: var(--blue); color: var(--blue); }
+.primary-launch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--blue-dk);
+  color: var(--tx1);
+  border: none;
+  padding: 11px 24px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: all .15s;
+}
+.primary-launch:hover { filter: brightness(1.15); transform: translateY(-1px); }
+.primary-launch svg { transition: transform .15s; }
+.primary-launch:hover svg { transform: translateX(3px); }
+
+/* ── TOOL GRID ── */
+.tool-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-bottom: 40px;
+}
+
+/* ── TOOL CARD ── */
+.tool-card {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 12px;
+  padding: 24px 26px;
+  cursor: pointer;
+  transition: all .2s;
+  position: relative;
+  overflow: hidden;
+}
+.tool-card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 3px; height: 100%;
+  border-radius: 12px 0 0 12px;
+  transition: opacity .2s;
+  opacity: .7;
+}
+.tool-card.green-accent::after  { background: var(--green); }
+.tool-card.purple-accent::after { background: var(--purple); }
+
+.tool-card:hover { transform: translateY(-2px); box-shadow: 0 12px 36px rgba(0,0,0,.4); border-color: #718096; }
+.tool-card-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.tool-icon {
+  width: 42px; height: 42px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.tool-icon.green  { background: var(--green-bg); border: 1px solid rgba(104,211,145,.2); }
+.tool-icon.purple { background: var(--purple-bg); border: 1px solid rgba(183,148,244,.2); }
+.tool-card-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 17px;
+  color: var(--tx1);
+  font-weight: 400;
+  letter-spacing: -.01em;
+  line-height: 1.2;
+}
+.tool-card-file {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  color: var(--tx4);
+  letter-spacing: .06em;
+  margin-top: 2px;
+}
+.tool-card-desc {
+  font-size: 12px;
+  color: var(--tx3);
+  line-height: 1.65;
+  margin-bottom: 18px;
+}
+.tool-features {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 18px;
+}
+.tool-feature {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--tx3);
+}
+.feature-dot {
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.tool-launch {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: none;
+  padding: 9px 20px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: all .15s;
+}
+.tool-launch.green  { background: var(--green-dk); color: #fff; }
+.tool-launch.purple { background: var(--purple-dk); color: #fff; }
+.tool-launch:hover  { filter: brightness(1.15); transform: translateY(-1px); }
+.tool-launch svg { transition: transform .15s; }
+.tool-launch:hover svg { transform: translateX(2px); }
+
+/* ── METHODOLOGY EXPLAINER CARD ── */
+.explainer-card {
+  background: linear-gradient(135deg, #1a202c 0%, #162032 100%);
+  border: 1px solid var(--border2);
+  border-radius: 12px;
+  padding: 28px 30px;
+  margin-bottom: 40px;
+  cursor: pointer;
+  transition: all .2s;
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+}
+.explainer-card:hover { transform: translateY(-2px); box-shadow: 0 12px 36px rgba(0,0,0,.4); border-color: var(--amber-dk); }
+.explainer-left { flex: 1; }
+.explainer-icon {
+  width: 48px; height: 48px;
+  background: var(--amber-bg);
+  border: 1px solid rgba(246,173,85,.2);
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.explainer-eyebrow {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin-bottom: 6px;
+}
+.explainer-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 18px;
+  color: var(--tx1);
+  font-weight: 400;
+  letter-spacing: -.01em;
+  margin-bottom: 6px;
+}
+.explainer-desc {
+  font-size: 12px;
+  color: var(--tx3);
+  line-height: 1.65;
+  margin-bottom: 16px;
+  max-width: 560px;
+}
+.explainer-tabs-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 18px;
+}
+.tab-preview {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  padding: 3px 9px;
+  border-radius: 3px;
+  color: var(--tx4);
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+}
+.explainer-launch {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--amber-dk);
+  color: #fff;
+  border: none;
+  padding: 9px 20px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: all .15s;
+}
+.explainer-launch:hover { filter: brightness(1.15); transform: translateY(-1px); }
+.explainer-launch svg { transition: transform .15s; }
+.explainer-launch:hover svg { transform: translateX(2px); }
+
+/* ── ABOUT BLOCK ── */
+.about-block {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 22px 26px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 20px;
+}
+.about-item-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  color: var(--tx4);
+  margin-bottom: 5px;
+}
+.about-item-val {
+  font-size: 12px;
+  color: var(--tx2);
+  line-height: 1.6;
+}
+
+/* ── FOOTER ── */
+.footer {
+  position: relative;
+  z-index: 1;
+  border-top: 1px solid var(--border);
+  padding: 18px 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 100%;
+}
+.footer-left {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--tx4);
+  letter-spacing: .06em;
+}
+.footer-right {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--tx4);
+}
+.footer-right span { color: var(--blue); }
+
+/* ── Tooltip ── */
+.tooltip-wrap { position: relative; display: inline-block; }
+.tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #0f172a;
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  padding: 7px 12px;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--tx2);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .15s;
+  z-index: 100;
+}
+.tooltip-wrap:hover .tooltip { opacity: 1; }
+
+/* ── Animations ── */
+@keyframes fadein { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+.primary-card  { animation: fadein .4s ease both; animation-delay: .05s; }
+.explainer-card{ animation: fadein .4s ease both; animation-delay: .15s; }
+.tool-card:nth-child(1) { animation: fadein .4s ease both; animation-delay: .2s; }
+.tool-card:nth-child(2) { animation: fadein .4s ease both; animation-delay: .28s; }
+.about-block   { animation: fadein .4s ease both; animation-delay: .35s; }
+
+/* ── Responsive ── */
+@media (max-width: 720px) {
+  .header { padding: 24px 20px 20px; }
+  .content { padding: 24px 20px 40px; }
+  .status-bar { padding: 0 20px; }
+  .tool-grid { grid-template-columns: 1fr; }
+  .about-block { grid-template-columns: 1fr; }
+  .explainer-card { flex-direction: column; }
+  .footer { flex-direction: column; gap: 6px; padding: 14px 20px; }
+  .header h1 { font-size: 24px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<div class="header">
+  <div class="header-inner">
+    <div class="eyebrow">NPI Hub · Lightship L1 Electric Trailer · v12.0</div>
+    <h1>Product Development <span>Resource Hub</span></h1>
+    <p>Central access point for all NPI programme resources — from the full end-to-end development reference and methodology guide through to the interactive DSM tooling. Select a resource below to launch it.</p>
+  </div>
+</div>
+
+<!-- ── STATUS BAR ── -->
+<div class="status-bar">
+  <div class="status-item">
+    <div class="status-dot dot-green"></div>
+    <span class="status-label">Programme</span>
+    <span class="status-val">Phase 3 — Detailed Design</span>
+  </div>
+  <div class="status-item">
+    <div class="status-dot dot-blue"></div>
+    <span class="status-label">WBS Progress</span>
+    <span class="status-val">42% Complete · 26/62 WPs</span>
+  </div>
+  <div class="status-item">
+    <div class="status-dot dot-amber"></div>
+    <span class="status-label">Active Gate</span>
+    <span class="status-val">G3 — Design Freeze</span>
+  </div>
+  <div class="status-item">
+    <div class="status-dot dot-purple"></div>
+    <span class="status-label">Resources</span>
+    <span class="status-val">4 Documents · 3 Interactive Tools</span>
+  </div>
+</div>
+
+<!-- ── MAIN CONTENT ── -->
+<div class="content">
+
+  <!-- PRIMARY RESOURCE -->
+  <div class="section-label">Primary Reference</div>
+
+  <div class="primary-card" onclick="launch('lightship_rv_product_development_full__7_.html')">
+    <div class="primary-card-header">
+      <div class="primary-icon">🚐</div>
+      <div>
+        <div class="primary-card-title">Lightship L1 — End-to-End Product Development</div>
+        <div class="primary-card-sub">The complete NPI programme reference. Covers all 33 sections from programme objectives and business case through DSM, WBS, phase gates, Scrum execution, requirements (PRS/FRS/RTM), design control, DFMEA, regulatory, manufacturing readiness, and supply chain.</div>
+      </div>
+    </div>
+    <div class="section-pills">
+      <span class="pill">§1 Objectives</span>
+      <span class="pill">§2 Business Case</span>
+      <span class="pill">§3 User Story</span>
+      <span class="pill">§4 Concept</span>
+      <span class="pill">§5 DSM</span>
+      <span class="pill">§6 WBS</span>
+      <span class="pill">§7 Phase Gates</span>
+      <span class="pill">§8 Budget</span>
+      <span class="pill">§9 Gantt</span>
+      <span class="pill">§10 Scrum</span>
+      <span class="pill">§11 SMART Reqs</span>
+      <span class="pill">§12 PRS</span>
+      <span class="pill">§13 FRS</span>
+      <span class="pill">§14 RTM</span>
+      <span class="pill">§15–20 Design → Mfg</span>
+      <span class="pill">§21–33 Supply → Risk</span>
+    </div>
+    <button class="primary-launch" onclick="launch('lightship_rv_product_development_full__7_.html'); event.stopPropagation();">
+      Open Full Reference
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </button>
+  </div>
+
+  <!-- METHODOLOGY EXPLAINER -->
+  <div class="section-label">Methodology Guide</div>
+
+  <div class="explainer-card" onclick="launch('dsm_wbs_requirements_explainer__2_.html')">
+    <div class="explainer-icon">📐</div>
+    <div class="explainer-left">
+      <div class="explainer-eyebrow">10-Panel Walkthrough</div>
+      <div class="explainer-title">DSM → WBS → Requirements — Logical Order of Operations</div>
+      <div class="explainer-desc">The foundational methodology resource. Explains why the sequence DSM → WBS → Requirements is non-negotiable in hardware NPI, walks through concept selection, DSM coupling analysis, WBS derivation, budget, critical path, PRS, FRS, and RTM — using Lightship as the worked example throughout.</div>
+      <div class="explainer-tabs-preview">
+        <span class="tab-preview">① Three Concepts</span>
+        <span class="tab-preview">② DSM Level 1</span>
+        <span class="tab-preview">③ Gate 1 Selection</span>
+        <span class="tab-preview">④ DSM Level 2</span>
+        <span class="tab-preview">⑤ WBS & Tasks</span>
+        <span class="tab-preview">⑥ PRS</span>
+        <span class="tab-preview">⑦ FRS</span>
+        <span class="tab-preview">⑦ RTM</span>
+        <span class="tab-preview">⑧ Budget</span>
+        <span class="tab-preview">⑨ Critical Path</span>
+      </div>
+      <button class="explainer-launch" onclick="launch('dsm_wbs_requirements_explainer__2_.html'); event.stopPropagation();">
+        Open Methodology Guide
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- INTERACTIVE TOOLS -->
+  <div class="section-label">Interactive DSM Tools</div>
+
+  <div class="tool-grid">
+
+    <!-- DSM Builder v2 — Lightship specific -->
+    <div class="tool-card green-accent" onclick="launch('dsm_builder_v2.html')">
+      <div class="tool-card-header">
+        <div class="tool-icon green">⬡</div>
+        <div>
+          <div class="tool-card-title">Lightship DSM Builder</div>
+          <div class="tool-card-file">dsm_builder_v2.html</div>
+        </div>
+      </div>
+      <div class="tool-card-desc">Interactive 5-step DSM builder pre-loaded with Lightship L1 subsystems. Build and optimise the dependency matrix, auto-generate the WBS, view the interface register, and produce a Gantt chart — all within a single tool.</div>
+      <div class="tool-features">
+        <div class="tool-feature">
+          <div class="feature-dot" style="background:var(--green)"></div>
+          Step 1 — Select Systems from Lightship subsystem library
+        </div>
+        <div class="tool-feature">
+          <div class="feature-dot" style="background:var(--green)"></div>
+          Step 2 — Build & populate the dependency matrix
+        </div>
+        <div class="tool-feature">
+          <div class="feature-dot" style="background:var(--green)"></div>
+          Step 3 — Optimise matrix to minimise feedback loops
+        </div>
+        <div class="tool-feature">
+          <div class="feature-dot" style="background:var(--green)"></div>
+          Step 4 — Auto-generate WBS, interface register & schedule
+        </div>
+        <div class="tool-feature">
+          <div class="feature-dot" style="background:var(--green)"></div>
+          Step 5 — Dependency flowchart & Gantt chart export
+        </div>
+      </div>
+      <button class="tool-launch green" onclick="launch('dsm_builder_v2.html'); event.stopPropagation();">
+        Open Builder
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+
+    <!-- Universal DSM Builder -->
+    <div class="tool-card purple-accent" onclick="launch('universal_dsm_builder.html')">
+      <div class="tool-card-header">
+        <div class="tool-icon purple">◈</div>
+        <div>
+          <div class="tool-card-title">Universal DSM Builder</div>
+          <div class="tool-card-file">universal_dsm_builder.html</div>
+        </div>
+      </div>
+      <div class="tool-card-desc">A configurable DSM builder for any NPI programme — not just Lightship. Set up custom project information, interface types, system categories, and subsystems from scratch or load a preset template. Use to apply the same methodology to new programmes.</div>
+      <div class="tool-features">
+        <div class="tool-feature">
+          <div class="feature-dot" style="background:var(--purple)"></div>
+          Step 0 — Project setup: name, interface types, categories
+        </div>
+        <div class="tool-feature">
+          <div class="feature-dot" style="background:var(--purple)"></div>
+          Step 1 — Configure custom systems & subsystems
+        </div>
+        <div class="tool-feature">
+          <div class="feature-dot" style="background:var(--purple)"></div>
+          Step 2 — Build & populate matrix for any domain
+        </div>
+        <div class="tool-feature">
+          <div class="feature-dot" style="background:var(--purple)"></div>
+          Step 3 — Optimise and cluster dependencies
+        </div>
+        <div class="tool-feature">
+          <div class="feature-dot" style="background:var(--purple)"></div>
+          Preset templates for rapid programme setup
+        </div>
+      </div>
+      <button class="tool-launch purple" onclick="launch('universal_dsm_builder.html'); event.stopPropagation();">
+        Open Builder
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+
+  </div>
+
+  <!-- ABOUT / SETUP GUIDE -->
+  <div class="section-label">Repository Setup</div>
+
+  <div class="about-block">
+    <div>
+      <div class="about-item-label">File Structure</div>
+      <div class="about-item-val" style="font-family:'DM Mono',monospace;font-size:11px;color:var(--tx3);line-height:2">
+        index.html <span style="color:var(--tx4)">← this file</span><br>
+        lightship_rv_product_development_full__7_.html<br>
+        dsm_wbs_requirements_explainer__2_.html<br>
+        dsm_builder_v2.html<br>
+        universal_dsm_builder.html
+      </div>
+    </div>
+    <div>
+      <div class="about-item-label">Hosting</div>
+      <div class="about-item-val">All files must live in the <strong style="color:var(--tx1)">same GitHub repository root</strong>. Enable GitHub Pages under Settings → Pages → Source: main branch, root folder. The hub references all other files by relative path — no absolute URLs needed.</div>
+    </div>
+    <div>
+      <div class="about-item-label">Updating a Resource</div>
+      <div class="about-item-val">Upload a new version of any HTML file to the repository with the <strong style="color:var(--tx1)">exact same filename</strong>. GitHub Pages will serve the updated file within ~60 seconds. The hub requires no changes.</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── FOOTER ── -->
+<div class="footer">
+  <div class="footer-left">NPI Hub · Lightship L1 · v12.0 · All files served from GitHub Pages</div>
+  <div class="footer-right">Relative path links — <span>same-repo only</span></div>
+</div>
+
+<script>
+  function launch(file) {
+    window.open('./' + file, '_blank');
+  }
+
+  // Keyboard shortcut hints
+  document.addEventListener('keydown', function(e) {
+    if (e.key === '1') launch('lightship_rv_product_development_full__7_.html');
+    if (e.key === '2') launch('dsm_wbs_requirements_explainer__2_.html');
+    if (e.key === '3') launch('dsm_builder_v2.html');
+    if (e.key === '4') launch('universal_dsm_builder.html');
+  });
+</script>
+
+</body>
+</html>
